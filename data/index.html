@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>BikeMetrics</title>
+    <link rel="stylesheet" href="bulma.min.css">
+    <link rel="stylesheet" href="style.css">
+    <script defer src="chart.min.js"></script>
+
+  </head>
+<body class="layout-default"
+      onload="javascript:init();
+              javascript:ga1();
+              javascript:ga2();">
+
+  <nav id="navbar" class ="navbar has-shadows-is-spaced">
+    <div class="container">
+      <div class="navbar-brand">
+        <a class ="navbar-item">
+          <h6 class = "title is-4">BikeMetrics</h6>
+        </a>
+      </div>
+    </div>
+  </nav>
+  <section class="section" style="background: lightgrey;">
+    <div class="container">
+      <div class="columns is-mobile">
+
+        <div class="column">
+            <div class = "gaugeContainer" style="width:100%; margin: 0px auto; background: white; padding: 10px;">
+              <h6 class="title is-6">
+                TYRE:
+              </h6>
+              <h6 class="subtitle is-6">
+                Temperature Front
+              </h6>
+              <canvas id="canvas1" width="200" height="200"></canvas>
+
+            </div>
+        </div>
+
+        <div class="column">
+            <div class = "gaugeContainer" style="width:100%; margin: 0px auto; background: white; padding: 10px;">
+              <h6 class="title is-6">
+                TYRE:
+              </h6>
+              <h6 class="subtitle is-6">
+                Temperature Rear
+              </h6>
+              <canvas id="canvas2" width="200" height="200"></canvas>
+
+            </div>
+        </div>
+
+
+
+      </div>
+    </div>
+  </section>
+
+  <section class="section" style="background: turquoise;">
+    <div class="container">
+      <div class="columns is-mobile">
+
+        <div class="column">
+            <div class = "Container" style="width:100%; margin: 0px auto; background: white; padding: 10px;">
+              <h6 class="title is-6">
+                LEAN:
+              </h6>
+              <h6 class="subtitle is-6">
+                Maximum
+              </h6>
+
+              <h1 class="title is-1 has-text-centered" >
+                <div id="leanDisp"></div>
+              </h1>
+
+
+            </div>
+        </div>
+
+        <div class="column">
+            <div class = "Container" style="width:100%; margin: 0px auto; background: white; padding: 10px;">
+              <h6 class="title is-6">
+                SPEED:
+              </h6>
+              <h6 class="subtitle is-6">
+                Km/h
+              </h6>
+
+              <h1 class="title is-1 has-text-centered" >
+                <div id="speedDisp"></div>
+              </h1>
+
+
+            </div>
+        </div>
+
+        <div class="column">
+            <div class = "Container" style="width:100%; margin: 0px auto; background: white; padding: 10px;">
+              <h6 class="title is-6">
+                ACCELERATION
+              </h6>
+              <h6 class="subtitle is-6">
+                m/s2
+              </h6>
+
+                <h1 class="title is-1 has-text-centered" >
+                  <div id="accelDisp"></div>
+                </h1>
+
+
+
+
+            </div>
+        </div>
+
+
+
+      </div>
+    </div>
+  </section>
+
+
+<!-- //a gauge
+<div class = "gauge1">
+  <canvas id="canvas1" width="300" height="300">
+</div>
+
+// a gauge
+<div class = "gauge2">
+  <canvas id="canvas2" width="300" height="300">
+</div> -->
+
+
+  <div class = "chart">
+    <canvas id="line-chart" width="800" height="450">
+  </div>
+
+
+</br>
+<button class="button is-primary is-medium" onclick="collectData();">Data</button>
+<div id = "readout"></div>
+</br>
+<div id = "readout2"></div>
+</br>
+<div id = "fileNameHolder">holder</div>
+
+<!-- Adding a websocket to the client (webpage) -->
+<script>
+  var objectf;
+  var objectr;
+  var leanangle;
+  var accel;
+  var webSocket, dataPlot;
+  var webSocket2;
+  var fileName;
+  var maxDataPoints = 50;
+  var gpsSecs;
+  var gpsMins;
+  var gpsHrs;
+  var velocity;
+
+  function removeData(){
+    dataPlot.data.labels.shift();
+    dataPlot.data.datasets[0].data.shift();
+  }
+  function removeData1(){
+    //dataPlot.data.labels.shift();
+    dataPlot.data.datasets[1].data.shift();
+  }
+  function removeData2(){
+    //dataPlot.data.labels.shift();
+    dataPlot.data.datasets[2].data.shift();
+  }
+  function removeData3(){
+    //dataPlot.data.labels.shift();
+    dataPlot.data.datasets[3].data.shift();
+  }
+  function removeData4(){
+    //dataPlot.data.labels.shift();
+    dataPlot.data.datasets[4].data.shift();
+  }
+
+  function addData(label, data) {
+    if(dataPlot.data.labels.length > maxDataPoints) removeData();
+    dataPlot.data.labels.push(label);
+    dataPlot.data.datasets[0].data.push(data);
+    dataPlot.update();
+  }
+
+  function addData2(data) {
+    if(dataPlot.data.labels.length > maxDataPoints) removeData1();
+    //dataPlot.data.labels.push(label);
+    dataPlot.data.datasets[1].data.push(data);
+    dataPlot.update();
+  }
+
+  function addData3(data) {
+    if(dataPlot.data.labels.length > maxDataPoints) removeData2();
+    //dataPlot.data.labels.push(label);
+    dataPlot.data.datasets[2].data.push(data);
+    dataPlot.update();
+  }
+
+  function addData4(data) {
+    if(dataPlot.data.labels.length > maxDataPoints) removeData3();
+    //dataPlot.data.labels.push(label);
+    dataPlot.data.datasets[3].data.push(data);
+    dataPlot.update();
+  }
+
+  function addData5(data) {
+    if(dataPlot.data.labels.length > maxDataPoints) removeData4();
+    //dataPlot.data.labels.push(label);
+    dataPlot.data.datasets[4].data.push(data);
+    dataPlot.update();
+  }
+
+  function collectData() {
+    webSocket2.send("R");
+  }
+
+  function init() {
+    webSocket = new WebSocket('ws://' + window.location.hostname + ':81/');
+    webSocket2 = new WebSocket('ws://' + window.location.hostname + ':82/');
+    dataPlot = new Chart(document.getElementById("line-chart"), {
+      type: 'line',
+      data: {
+          labels: [],
+          datasets: [
+            {
+            data: [],
+            label: "front",
+            borderColor: "DarkTurquoise",
+            fill: false
+            },{
+            data: [],
+            label: "rear",
+            borderColor: "DarkOrange",
+            fill: false
+            },{
+            data: [],
+            label: "lean",
+            borderColor: "lightgreen",
+            fill: false
+            },{
+            data: [],
+            label: "accel",
+            borderColor: "tomato",
+            fill: false
+            },{
+            data: [],
+            label: "speed",
+            borderColor: "lightblue",
+            fill: false
+            }
+        ]
+      }
+    });
+
+    webSocket2.onmessage = function(event) {
+      var data = JSON.parse(event.data);
+      fileName = (data.valueFN);
+      document.getElementById("fileNameHolder").innerHTML = fileName;
+    }
+
+    webSocket.onmessage = function(event) {
+      var data = JSON.parse(event.data);
+      var today = new Date();
+      var t = gpsHrs + ":" + gpsMins + ":" + gpsSecs;
+      //
+
+      // assign incoming values to global variables
+      objectf = (data.value);
+      objectr = (data.value2);
+      Leanangle = (data.value3);
+      MaxLeanL = (data.value4);
+      MaxLeanR = (data.value5);
+      accel = (data.value6);
+      gpsHrs = (data.value7);
+      gpsMins = (data.value8);
+      gpsSecs = (data.value9);
+      velocity = (data.value10);
+
+      // call functions to draw lines on graph
+      addData(t, data.value);
+      addData2(data.value2);
+      addData3(data.value3);
+      addData4(data.value6);
+      addData5(data.value10);
+      //var barWidth1 = document.getElementById("indicator1").offsetWidth;
+      //var barCalc1 = barWidth1 / barData1 * 100;
+      document.getElementById("readout").innerHTML = gpsHrs + ":" + gpsMins + ":" + gpsSecs;
+      document.getElementById("readout2").innerHTML = "speed=" + velocity + " accel= " + accel + " Lean= " + Leanangle + " MaxL=" + MaxLeanL + " MaxR=" + MaxLeanR ;
+
+      document.getElementById("leanDisp").innerHTML = Leanangle;
+      document.getElementById("speedDisp").innerHTML = velocity;
+      document.getElementById("accelDisp").innerHTML = accel;
+
+
+
+
+
+
+    }
+  }
+
+  function ga1(){
+	//canvas initialization
+	var canvas = document.getElementById("canvas1");
+	var ctx = canvas.getContext("2d");
+	//dimensions
+	var W = canvas.width;
+	var H = canvas.height;
+	//Variables
+	var degrees = 0;
+	var new_degrees = 0;
+	var difference = 0;
+	var color = "DarkTurquoise"; //green looks better to me
+	var bgcolor = "#333";
+	var text;
+	var animation_loop, redraw_loop;
+
+  	function initgauge1()
+  	{
+  		//Clear the canvas everytime a chart is drawn
+  		ctx.clearRect(0, 0, W, H);
+
+  		//Background 360 degree arc
+      ctx.beginPath();
+		ctx.strokeStyle = bgcolor;
+		ctx.lineWidth = 10;
+		ctx.arc(W/2, H/2, 70, -Math.PI, -Math.PI/180, false); //you can see the arc now
+		ctx.stroke();
+
+		//gauge will be a simple arc
+		//Angle in radians = angle in degrees * PI / 180
+		var radians = degrees/2 * Math.PI / 180;
+		ctx.beginPath();
+		ctx.strokeStyle = color;
+		ctx.lineWidth = 30;
+		//The arc starts from the rightmost end. If we deduct 90 degrees from the angles
+		//the arc will start from the topmost end
+		ctx.arc(W/2, H/2, 70, 0 - 180*Math.PI/180, radians - 180*Math.PI/180, false);
+  		//you can see the arc now
+  		ctx.stroke();
+
+  		//Lets add the text
+  		ctx.fillStyle = color;
+  		ctx.font = "30px Arial";
+  		text = objectf + "C";
+  		//Lets center the text
+  		//deducting half of text width from position x
+  		text_width = ctx.measureText(text).width;
+  		//adding manual value to position y since the height of the text cannot
+  		//be measured easily. There are hacks but we will keep it manual for now.
+  		ctx.fillText(text, W/2 - text_width/2, H/2 + 15);
+  	}
+
+  	function draw()
+  	{
+  		//Cancel any movement animation if a new chart is requested
+  		if(typeof animation_loop != undefined) clearInterval(animation_loop);
+
+  		//random degree from 0 to 360
+  		new_degrees = objectf * 3.6;
+  		difference = new_degrees - degrees;
+  		//This will animate the gauge to new positions
+  		//The animation will take 1 second
+  		//time for each frame is 1sec / difference in degrees
+  		animation_loop = setInterval(animate_to, 1/difference);
+  	}
+
+  	//function to make the chart move to new degrees
+  	function animate_to()
+  	{
+  		//clear animation loop if degrees reaches to new_degrees
+  		if(degrees == new_degrees)
+  			clearInterval(animation_loop);
+
+  		if(degrees < new_degrees)
+  			degrees++;
+  		else
+  			degrees--;
+
+  		initgauge1();
+  	}
+
+    draw();
+	  redraw_loop = setInterval(draw, 200); //Draw a new chart
+}
+
+function ga2(){
+//canvas initialization
+var canvas = document.getElementById("canvas2");
+var ctx = canvas.getContext("2d");
+//dimensions
+var W = canvas.width;
+var H = canvas.height;
+//Variables
+var degrees = 0;
+var new_degrees = 0;
+var difference = 0;
+var color = "tomato"; //green looks better to me
+var bgcolor = "#333";
+var text;
+var animation_loop, redraw_loop;
+
+  function initgauge1()
+  {
+    //Clear the canvas everytime a chart is drawn
+    ctx.clearRect(0, 0, W, H);
+
+    //Background 360 degree arc
+    ctx.beginPath();
+  ctx.strokeStyle = bgcolor;
+  ctx.lineWidth = 10;
+  ctx.arc(W/2, H/2, 70, -Math.PI, -Math.PI/180, false); //you can see the arc now
+  ctx.stroke();
+
+  //gauge will be a simple arc
+  //Angle in radians = angle in degrees * PI / 180
+  var radians = degrees/2 * Math.PI / 180;
+  ctx.beginPath();
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 30;
+  //The arc starts from the rightmost end. If we deduct 90 degrees from the angles
+  //the arc will start from the topmost end
+  ctx.arc(W/2, H/2, 70, 0 - 180*Math.PI/180, radians - 180*Math.PI/180, false);
+    //you can see the arc now
+    ctx.stroke();
+
+    //Lets add the text
+    ctx.fillStyle = color;
+    ctx.font = "30px Arial";
+    text = objectr + "C";
+    //Lets center the text
+    //deducting half of text width from position x
+    text_width = ctx.measureText(text).width;
+    //adding manual value to position y since the height of the text cannot
+    //be measured easily. There are hacks but we will keep it manual for now.
+    ctx.fillText(text, W/2 - text_width/2, H/2 + 15);
+  }
+
+  function draw()
+  {
+    //Cancel any movement animation if a new chart is requested
+    if(typeof animation_loop != undefined) clearInterval(animation_loop);
+
+    //random degree from 0 to 360
+    new_degrees = objectr * 3.6;
+    difference = new_degrees - degrees;
+    //This will animate the gauge to new positions
+    //The animation will take 1 second
+    //time for each frame is 1sec / difference in degrees
+    animation_loop = setInterval(animate_to, 1/difference);
+  }
+
+  //function to make the chart move to new degrees
+  function animate_to()
+  {
+    //clear animation loop if degrees reaches to new_degrees
+    if(degrees == new_degrees)
+      clearInterval(animation_loop);
+
+    if(degrees < new_degrees)
+      degrees++;
+    else
+      degrees--;
+
+    initgauge1();
+  }
+
+  draw();
+  redraw_loop = setInterval(draw, 200); //Draw a new chart
+}
+
+
+
+
+</script>
+
+
+</body>
+</html>

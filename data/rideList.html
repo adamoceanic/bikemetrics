@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>BikeMetrics</title>
+  <link rel="stylesheet" href="bulma.min.css">
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body class="layout-default"
+      onload="javascript:init();">
+
+<h1> list page </h1>
+
+<h2><div id="wsReadout">Update fileName</div></h2>
+
+</body>
+
+<script>
+
+var fileName;
+var webSocket;
+
+function init() {
+webSocket = new WebSocket('ws://' + window.location.hostname + ':81/');
+
+webSocket.onmessage = function(event) {
+
+  var data = JSON.parse(event.data);
+
+  fileName = (data.valueFN);
+
+  document.getElementById("wsReadout").innerHTML = fileName;
+
+
+}
+}
+
+</script>
+
+
+</html>
